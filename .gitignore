@@ -1,0 +1,13 @@
+*.db
+*.py[cod]
+.web
+.venv
+.vscode
+.test-files
+.ipynb_checkpoints
+__pycache__/
+assets/external/
+download_cache
+uploaded_files
+.env
+*.log
