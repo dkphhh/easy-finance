@@ -1,6 +1,5 @@
 aiohttp==3.10.9
 aiolimiter==1.1.0
-ipykernel==6.29.5
 polars==1.9.0
 python-dotenv==1.0.1
 XlsxWriter==3.2.0
