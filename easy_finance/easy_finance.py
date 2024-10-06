@@ -216,9 +216,12 @@ class UploadFile(rx.State):
             )  # 将新增数据加入到数据集中
 
             setattr(self, self.MODE_CONFIG[result_type]["notification_attr"], True)
-        except Exception as e:
+        except ValueError as e:
             logger.error(f"解析文件「{filename}」过程中遇到错误：{e}。")
-            raise Exception(f"解析文件「{filename}」过程中遇到错误：{e}。")
+            raise ValueError(f"解析文件「{filename}」过程中遇到错误：{e}。")
+        except TypeError:
+            logger.error(f"解析文件「{filename}」可能不是发票或银行回单。")
+            raise TypeError(f"解析文件「{filename}」可能不是发票或银行回单。")
 
     async def handle_upload(self, files: list[rx.UploadFile]):
         """用户上传文件后的处理函数，将文件转换为base64编码，根据当前模式，将编码后的文件传递给相应的上游 api 处理，返回格式化后的处理结果
@@ -242,7 +245,7 @@ class UploadFile(rx.State):
             logger.info(
                 f"函数 handle_upload 处理{len(files)}个文件,用时：{elapsed_time:.5f}s"
             )  # 计算函数运行时间
-        except TypeError as err:  # get_bank_slip_data 设定了一个 TypeError 异常检查，如果上传的文件不是银行回单或发票文件会弹出 TypeError
+        except Exception as err:  # 检查异常
             yield rx.window_alert(f"{err}\n其他文件将正常解析。")
         finally:
             self.upload_loading = False  # 文件上传结束，更新 loading 状态
@@ -396,6 +399,8 @@ def upload_zone(
                 color=color,
                 bg="white",
                 border=f"1px solid {color}",
+                width="80px",
+                height="30px",
             ),
             rx.vstack(
                 rx.foreach(hint_text, render_hint_text),
@@ -459,7 +464,12 @@ def render_bank_slip_data() -> rx.Component:
         rx.cond(  # 一个是否在准备下载文件的条件判断，如果有文件正在准备下载则显示加载按钮
             UploadFile.download_loding,
             rx.button(
-                loading=True, color=color, bg="white", border=f"1px solid {color}"
+                loading=True,
+                color=color,
+                bg="white",
+                border=f"1px solid {color}",
+                width="80px",
+                height="30px",
             ),
             rx.button(
                 "下载结果",
