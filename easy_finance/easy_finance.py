@@ -399,8 +399,8 @@ def upload_zone(
                 color=color,
                 bg="white",
                 border=f"1px solid {color}",
-                width="80px",
-                height="30px",
+                width="82px",
+                height="32px",
             ),
             rx.vstack(
                 rx.foreach(hint_text, render_hint_text),
@@ -468,8 +468,8 @@ def render_bank_slip_data() -> rx.Component:
                 color=color,
                 bg="white",
                 border=f"1px solid {color}",
-                width="80px",
-                height="30px",
+                width="82px",
+                height="32px",
             ),
             rx.button(
                 "下载结果",
