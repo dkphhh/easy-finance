@@ -186,11 +186,17 @@ class UploadFile(rx.State):
         """
         try:
             filename = file.filename  # 提取文件名
-            file_base64 = b64encode(await file.read()).decode(
+            file_content = await file.read()
+            if not file_content:
+                raise ValueError(f"文件 {filename} 是空的")  # 检查文件内容是否正常上传
+            file_base64 = b64encode(file_content).decode(
                 "utf-8"
             )  # 将接收的文件批量转化为base64编码
-
             resp = await request_api(file_base64)
+            if not resp or "result_type" not in resp or "result_data" not in resp:
+                raise ValueError(
+                    f"API 返回了无效的响应: {resp}"
+                )  # 检查 API 是否正常返回内容
             logger.info(f"正在处理文件：{filename}")
             result_type: str = resp["result_type"]  # 获取文件类型
             result_data: list[str] = resp["result_data"]  # 获取文件数据
@@ -210,9 +216,9 @@ class UploadFile(rx.State):
             )  # 将新增数据加入到数据集中
 
             setattr(self, self.MODE_CONFIG[result_type]["notification_attr"], True)
-        except TypeError as e:
+        except Exception as e:
             logger.error(f"解析文件「{filename}」过程中遇到错误：{e}。")
-            raise TypeError(f"解析文件「{filename}」过程中遇到错误：{e}。")
+            raise Exception(f"解析文件「{filename}」过程中遇到错误：{e}。")
 
     async def handle_upload(self, files: list[rx.UploadFile]):
         """用户上传文件后的处理函数，将文件转换为base64编码，根据当前模式，将编码后的文件传递给相应的上游 api 处理，返回格式化后的处理结果
