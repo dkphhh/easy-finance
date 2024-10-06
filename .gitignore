@@ -1,7 +1,7 @@
 *.db
 *.py[cod]
 .web
-.venv
+.venv/
 .vscode
 .test-files
 .ipynb_checkpoints
@@ -11,3 +11,6 @@ download_cache
 uploaded_files
 .env
 *.log
+compose.prod.yaml
+Dockerfile.production
+.dockerignore
