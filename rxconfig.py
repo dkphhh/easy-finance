@@ -1,7 +1,10 @@
+import os
+
 import reflex as rx
+from dotenv import load_dotenv
 
-config = rx.Config(
-    app_name="easy_finance",
-    loglevel="debug",
+load_dotenv()
 
-)
+api_url = os.getenv("API_URL")
+
+config = rx.Config(app_name="easy_finance", loglevel="info", api_url=api_url)

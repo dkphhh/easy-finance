@@ -14,3 +14,4 @@ uploaded_files
 compose.prod.yaml
 Dockerfile.production
 .dockerignore
+测试文件
