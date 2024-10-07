@@ -322,6 +322,9 @@ def dark_mode_toggle() -> rx.Component:
         variant="classic",
         radius="large",
         value=color_mode,
+        position="fixed",
+        bottom="10px",
+        left="10px",
     )
 
 
@@ -366,7 +369,6 @@ def process_mode_toggle() -> rx.Component:
         variant="classic",
         radius="large",
         value=UploadFile.mode,
-        margin_bottom="10px",
     )
 
 
@@ -461,7 +463,7 @@ def render_bank_slip_data() -> rx.Component:
             max_column_width=300,
             max_column_auto_width=300,
             width=rx.breakpoints(initial="90vw", sm="60vw", md="55vw", lg="60vw"),
-            height="30vh",
+            height=rx.breakpoints(xs="30vh"),
             border_radius="2%",
         ),
         rx.cond(  # 一个是否在准备下载文件的条件判断，如果有文件正在准备下载则显示加载按钮
@@ -493,35 +495,34 @@ def render_bank_slip_data() -> rx.Component:
 def index():
     """主页面"""
     return rx.vstack(
-        rx.box(dark_mode_toggle()),  # 颜色模式调整按钮
+        dark_mode_toggle(),  # 颜色模式调整按钮
         rx.vstack(
             rx.vstack(
-                rx.vstack(
-                    rx.heading(  # 大标题
-                        "Easy Finance",
-                        as_="h1",
-                        size=rx.breakpoints(initial="8", xs="9"),
-                        color=color,
-                        high_contrast=True,
-                    ),
-                    rx.hstack(  # 小标题
-                        rx.text(
-                            "批量识别银行回单与增值税发票",
-                            size=rx.breakpoints(initial="3", xs="6"),
-                        ),
-                        rx.badge(
-                            "New",
-                            size="1",
-                            color_scheme="violet",
-                            variant="solid",
-                            padding="1px",
-                        ),
-                        spacing="1",
-                        justify="start",
-                    ),
-                    margin_bottom=rx.breakpoints(initial="10px", lg="20px"),
-                    align="center",
+                rx.heading(  # 大标题
+                    "Easy Finance",
+                    as_="h1",
+                    size=rx.breakpoints(initial="8", xs="9"),
+                    color=color,
+                    high_contrast=True,
                 ),
+                rx.hstack(  # 小标题
+                    rx.text(
+                        "批量识别银行回单与增值税发票",
+                        size=rx.breakpoints(initial="3", xs="6"),
+                    ),
+                    rx.badge(
+                        "New",
+                        size="1",
+                        color_scheme="violet",
+                        variant="solid",
+                        padding="1px",
+                    ),
+                    spacing="1",
+                    justify="start",
+                ),
+                margin_bottom=rx.breakpoints(initial="10px", lg="20px"),
+                margin_top=rx.breakpoints(initial="10px", xs="0px"),
+                align="center",
             ),
             # ------------------ 桌面端显示----------------------
             rx.desktop_only(
@@ -602,17 +603,16 @@ def index():
                     "如识别结果有误，可双击单元格修改。",
                     icon="info",
                     color_scheme="violet",
-                   # padding_top="10px",
                 ),
             ),
             align="center",
             justify="center",
             width="100%",
             height="100%",
+            spacing="1",
         ),
         width="100vw",
-        height=rx.breakpoints(initial="100%", xs="100vh"),
-        spacing="1",
+        height=rx.breakpoints(xs="100vh"),
     )
 
 
