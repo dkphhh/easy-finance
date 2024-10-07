@@ -16,7 +16,7 @@ from .request_api import request_api
 
 """
 TODO:
-1. 移动端适配
+
 2. 增加一个将结果回传到飞书表格的功能
 3. 美化table,给未识别内容标黄突出显示
 4. 增加一个删除内容的警告
