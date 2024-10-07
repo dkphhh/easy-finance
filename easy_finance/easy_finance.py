@@ -16,6 +16,7 @@ from .request_api import request_api
 
 """
 TODO:
+1. 移动端适配
 2. 增加一个将结果回传到飞书表格的功能
 3. 美化table,给未识别内容标黄突出显示
 4. 增加一个删除内容的警告
@@ -339,7 +340,7 @@ def process_mode_toggle() -> rx.Component:
         rx.segmented_control.item(
             rx.hstack(
                 rx.icon(tag="ticket", size=20),
-                rx.text("增值税发票"),
+                rx.text("增值税发票", size="3"),
                 rx.cond(
                     UploadFile.invoice_notification,
                     notification_badge(),
@@ -351,7 +352,7 @@ def process_mode_toggle() -> rx.Component:
         rx.segmented_control.item(
             rx.hstack(
                 rx.icon(tag="landmark", size=20),
-                rx.text("银行回单"),
+                rx.text("银行回单", size="3"),
                 rx.cond(
                     UploadFile.bank_slips_notification,
                     notification_badge(),
@@ -371,7 +372,7 @@ def process_mode_toggle() -> rx.Component:
 
 def render_hint_text(hint_text: str) -> rx.Component:
     """渲染上传区的提示词文本"""
-    return rx.text(hint_text, size="2", align="center")
+    return rx.text(hint_text, size="1", align="center")
 
 
 def upload_zone(
@@ -409,8 +410,8 @@ def upload_zone(
             ),
             align="center",
             justify="center",
-            width="30vw",
-            height="20vh",
+            width="100%",
+            height="100%",
         ),
         id=upload_id,
         border=f"1px dotted {color}",
@@ -427,8 +428,10 @@ def upload_zone(
         on_drop=UploadFile.handle_upload(rx.upload_files(upload_id=upload_id)),  # type:ignore
         align="center",
         justify="center",
-        margin_right="5px",
         border_radius="2%",
+        width=rx.breakpoints(initial="90vw", sm="60vw", md="40vw", lg="35vw"),
+        height="30vh",
+        padding="20px",
     )
 
 
@@ -457,8 +460,8 @@ def render_bank_slip_data() -> rx.Component:
             min_column_width=100,
             max_column_width=300,
             max_column_auto_width=300,
-            width="50vw",
-            height="40vh",
+            width=rx.breakpoints(initial="90vw", sm="60vw", md="55vw", lg="60vw"),
+            height="30vh",
             border_radius="2%",
         ),
         rx.cond(  # 一个是否在准备下载文件的条件判断，如果有文件正在准备下载则显示加载按钮
@@ -482,7 +485,7 @@ def render_bank_slip_data() -> rx.Component:
         rx.text("下载为 Excel 表", size="2"),
         align="center",
         justify="center",
-        margin_left="5px",
+        margin_left=rx.breakpoints(initial="0px", md="10px"),
     )
 
 
@@ -493,54 +496,105 @@ def index():
         rx.box(dark_mode_toggle()),  # 颜色模式调整按钮
         rx.vstack(
             rx.vstack(
-                rx.heading(  # 大标题
-                    "Easy Finance", as_="h1", size="9", color=color, high_contrast=True
-                ),
-                rx.hstack(  # 小标题
-                    rx.text("批量识别银行回单与增值税发票", size="6"),
-                    rx.badge(
-                        "New",
-                        size="1",
-                        color_scheme="violet",
-                        variant="solid",
-                        padding="1px",
+                rx.vstack(
+                    rx.heading(  # 大标题
+                        "Easy Finance",
+                        as_="h1",
+                        size=rx.breakpoints(initial="8", xs="9"),
+                        color=color,
+                        high_contrast=True,
                     ),
-                    spacing="1",
-                    justify="start",
+                    rx.hstack(  # 小标题
+                        rx.text(
+                            "批量识别银行回单与增值税发票",
+                            size=rx.breakpoints(initial="3", xs="6"),
+                        ),
+                        rx.badge(
+                            "New",
+                            size="1",
+                            color_scheme="violet",
+                            variant="solid",
+                            padding="1px",
+                        ),
+                        spacing="1",
+                        justify="start",
+                    ),
+                    margin_bottom=rx.breakpoints(initial="10px", lg="20px"),
+                    align="center",
                 ),
-                margin_bottom="20px",
             ),
-            process_mode_toggle(),  # 模式选择
-            rx.hstack(
-                rx.cond(
-                    # 文件上传区
-                    # 用于检查是否正在上传的条件判断，如果有文件在上传，显示加载状态
-                    UploadFile.upload_loading,
-                    upload_zone(
-                        is_loading=True,
-                        color=color,
-                        hint_text=["文件上传中……"],
+            # ------------------ 桌面端显示----------------------
+            rx.desktop_only(
+                rx.vstack(
+                    process_mode_toggle(),  # 模式选择
+                    rx.hstack(
+                        rx.cond(
+                            # 文件上传区
+                            # 用于检查是否正在上传的条件判断，如果有文件在上传，显示加载状态
+                            UploadFile.upload_loading,
+                            upload_zone(
+                                is_loading=True,
+                                color=color,
+                                hint_text=["文件上传中……"],
+                            ),
+                            upload_zone(
+                                is_loading=False,
+                                color=color,
+                                hint_text=[
+                                    "将发票或银行回单文件拖入框内",
+                                    "支持文件格式：.jpg、.jpeg、.png、.pdf",
+                                    "一次最多上传10个文件，可分批多次上传",
+                                ],
+                            ),
+                        ),
+                        rx.cond(
+                            # 表格显示区
+                            # 检查 bank_slips_date内是否有数据，如果有显示表格和下载按钮
+                            UploadFile.data_is_exists,
+                            render_bank_slip_data(),
+                        ),
+                        align="start",
+                        justify="center",
+                        width="100%",
+                        height="100%",
                     ),
-                    upload_zone(
-                        is_loading=False,
-                        color=color,
-                        hint_text=[
-                            "将发票或银行回单文件拖入框内",
-                            "支持文件格式：.jpg、.jpeg、.png、.pdf",
-                            "一次最多上传10个文件，可分批多次上传",
-                        ],
+                    align="center",
+                ),
+            ),
+            # ------------------ 移动端显示-----------------
+            rx.mobile_and_tablet(
+                rx.vstack(
+                    rx.cond(
+                        # 文件上传区
+                        # 用于检查是否正在上传的条件判断，如果有文件在上传，显示加载状态
+                        UploadFile.upload_loading,
+                        upload_zone(
+                            is_loading=True,
+                            color=color,
+                            hint_text=["文件上传中……"],
+                        ),
+                        upload_zone(
+                            is_loading=False,
+                            color=color,
+                            hint_text=[
+                                "将发票或银行回单文件拖入框内",
+                                "支持文件格式：.jpg、.jpeg、.png、.pdf",
+                                "一次最多上传10个文件，可分批多次上传",
+                            ],
+                        ),
                     ),
+                    process_mode_toggle(),  # 模式选择
+                    rx.cond(
+                        # 表格显示区
+                        # 检查 bank_slips_date内是否有数据，如果有显示表格和下载按钮
+                        UploadFile.data_is_exists,
+                        render_bank_slip_data(),
+                    ),
+                    align="center",
+                    justify="center",
+                    width="100%",
+                    height="100%",
                 ),
-                rx.cond(
-                    # 表格显示区
-                    # 检查 bank_slips_date内是否有数据，如果有显示表格和下载按钮
-                    UploadFile.data_is_exists,
-                    render_bank_slip_data(),
-                ),
-                align="start",
-                justify="center",
-                width="100%",
-                height="50%",
             ),
             rx.cond(  # 提醒
                 UploadFile.data_is_exists,
@@ -548,6 +602,7 @@ def index():
                     "如识别结果有误，可双击单元格修改。",
                     icon="info",
                     color_scheme="violet",
+                   # padding_top="10px",
                 ),
             ),
             align="center",
@@ -556,7 +611,8 @@ def index():
             height="100%",
         ),
         width="100vw",
-        height="100vh",
+        height=rx.breakpoints(initial="100%", xs="100vh"),
+        spacing="1",
     )
 
 
