@@ -328,7 +328,38 @@ def dark_mode_toggle() -> rx.Component:
     )
 
 
+def header() -> rx.Component:
+    """标题栏"""
+    return rx.vstack(
+        rx.heading(  # 大标题
+            "Easy Finance",
+            as_="h1",
+            size=rx.breakpoints(initial="8", xs="9"),
+            color=color,
+            high_contrast=True,
+        ),
+        rx.hstack(  # 小标题
+            rx.text(
+                "批量识别银行回单与增值税发票",
+                size=rx.breakpoints(initial="3", xs="6"),
+            ),
+            rx.badge(
+                "New",
+                size="1",
+                color_scheme="violet",
+                variant="solid",
+                padding="1px",
+            ),
+            spacing="1",
+            justify="start",
+        ),
+        margin_bottom="10px",
+        align="center",
+    )
+
+
 def notification_badge() -> rx.Component:
+    """在模式选择按钮上显示信息更新的红点"""
     return rx.box(
         background_color="#DC3B5D",
         border_radius="100%",
@@ -338,37 +369,43 @@ def notification_badge() -> rx.Component:
 
 
 def process_mode_toggle() -> rx.Component:
-    """切换处理模式，也就是 UploadFile.mode 的值"""
-    return rx.segmented_control.root(
-        rx.segmented_control.item(
-            rx.hstack(
-                rx.icon(tag="ticket", size=20),
-                rx.text("增值税发票", size="3"),
-                rx.cond(
-                    UploadFile.invoice_notification,
-                    notification_badge(),
+    """
+    切换处理模式，也就是 UploadFile.mode 的值
+    只有在有数据时才会显示，如果没有数据就不会显示
+    """
+    return rx.cond(
+        UploadFile.data_is_exists,
+        rx.segmented_control.root(
+            rx.segmented_control.item(
+                rx.hstack(
+                    rx.icon(tag="ticket", size=20),
+                    rx.text("增值税发票", size="3"),
+                    rx.cond(
+                        UploadFile.invoice_notification,
+                        notification_badge(),
+                    ),
                 ),
+                width="180px",
+                value="invoice",
             ),
-            width="180px",
-            value="invoice",
-        ),
-        rx.segmented_control.item(
-            rx.hstack(
-                rx.icon(tag="landmark", size=20),
-                rx.text("银行回单", size="3"),
-                rx.cond(
-                    UploadFile.bank_slips_notification,
-                    notification_badge(),
+            rx.segmented_control.item(
+                rx.hstack(
+                    rx.icon(tag="landmark", size=20),
+                    rx.text("银行回单", size="3"),
+                    rx.cond(
+                        UploadFile.bank_slips_notification,
+                        notification_badge(),
+                    ),
                 ),
+                width="180px",
+                value="bank_slip",
             ),
-            width="180px",
-            value="bank_slip",
+            on_change=UploadFile.set_mode,  # type:ignore
+            on_click=UploadFile.set_notification_false,
+            variant="classic",
+            radius="large",
+            value=UploadFile.mode,
         ),
-        on_change=UploadFile.set_mode,  # type:ignore
-        on_click=UploadFile.set_notification_false,
-        variant="classic",
-        radius="large",
-        value=UploadFile.mode,
     )
 
 
@@ -431,7 +468,7 @@ def upload_zone(
         align="center",
         justify="center",
         border_radius="2%",
-        width=rx.breakpoints(initial="90vw", sm="60vw", md="40vw", lg="35vw"),
+        width=rx.breakpoints(initial="80vw", sm="60vw", md="40vw", lg="500px"),
         height="30vh",
         padding="20px",
     )
@@ -497,33 +534,7 @@ def index():
     return rx.vstack(
         dark_mode_toggle(),  # 颜色模式调整按钮
         rx.vstack(
-            rx.vstack(
-                rx.heading(  # 大标题
-                    "Easy Finance",
-                    as_="h1",
-                    size=rx.breakpoints(initial="8", xs="9"),
-                    color=color,
-                    high_contrast=True,
-                ),
-                rx.hstack(  # 小标题
-                    rx.text(
-                        "批量识别银行回单与增值税发票",
-                        size=rx.breakpoints(initial="3", xs="6"),
-                    ),
-                    rx.badge(
-                        "New",
-                        size="1",
-                        color_scheme="violet",
-                        variant="solid",
-                        padding="1px",
-                    ),
-                    spacing="1",
-                    justify="start",
-                ),
-                margin_bottom=rx.breakpoints(initial="10px", lg="20px"),
-                margin_top=rx.breakpoints(initial="10px", xs="0px"),
-                align="center",
-            ),
+            header(),  # 标题
             # ------------------ 桌面端显示----------------------
             rx.desktop_only(
                 rx.vstack(
@@ -612,7 +623,7 @@ def index():
             spacing="1",
         ),
         width="100vw",
-        height=rx.breakpoints(xs="100vh"),
+        height=rx.breakpoints(initial="100%", xs="100vh"),
     )
 
 
