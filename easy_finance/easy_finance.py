@@ -146,7 +146,7 @@ class UploadFile(rx.State):
     invoice_notification: bool = False
     # TODO 目前 Literal 类型存在 bug，等修复后将 mode 改为 Literal 类型
 
-    # 将 state 需要经常用到的方法和属性抽象出一个配置列表，通过固定的方法获取当前 state 的识别模式，并执行相应的操作
+    # 将 state 需要经常用到的方法和属性抽象出一个配置列表，通过固定的方法获取当前 state 的识别，并执行相应的操作
     MODE_CONFIG = {
         "bank_slip": {
             "data_attr": "bank_slips_data",
@@ -225,7 +225,7 @@ class UploadFile(rx.State):
             raise TypeError(f"解析文件「{filename}」可能不是发票或银行回单。")
 
     async def handle_upload(self, files: list[rx.UploadFile]):
-        """用户上传文件后的处理函数，将文件转换为base64编码，根据当前模式，将编码后的文件传递给相应的上游 api 处理，返回格式化后的处理结果
+        """用户上传文件后的处理函数，将文件转换为base64编码，将编码后的文件传递给相应的上游 api 处理，返回格式化后的处理结果
 
         Args:
             files (list[rx.UploadFile]): 文件列表，可以是一个文件也可以是多个文件
@@ -359,7 +359,7 @@ def header() -> rx.Component:
 
 
 def notification_badge() -> rx.Component:
-    """在模式选择按钮上显示信息更新的红点"""
+    """在切换按钮上显示信息更新的红点"""
     return rx.box(
         background_color="#DC3B5D",
         border_radius="100%",
@@ -370,7 +370,7 @@ def notification_badge() -> rx.Component:
 
 def process_mode_toggle() -> rx.Component:
     """
-    切换处理模式，也就是 UploadFile.mode 的值
+    处理按钮，也就是 UploadFile.mode 的值
     只有在有数据时才会显示，如果没有数据就不会显示
     """
     return rx.cond(
@@ -532,13 +532,13 @@ def render_bank_slip_data() -> rx.Component:
 def index():
     """主页面"""
     return rx.vstack(
-        dark_mode_toggle(),  # 颜色模式调整按钮
+        dark_mode_toggle(),  # 明暗模式调整按钮
         rx.vstack(
             header(),  # 标题
             # ------------------ 桌面端显示----------------------
             rx.desktop_only(
                 rx.vstack(
-                    process_mode_toggle(),  # 模式选择
+                    process_mode_toggle(),  # 选单切换按钮
                     rx.hstack(
                         rx.cond(
                             # 文件上传区
@@ -595,7 +595,7 @@ def index():
                             ],
                         ),
                     ),
-                    process_mode_toggle(),  # 模式选择
+                    process_mode_toggle(),  # 切换选择
                     rx.cond(
                         # 表格显示区
                         # 检查 bank_slips_date内是否有数据，如果有显示表格和下载按钮
