@@ -9,7 +9,7 @@ from typing import Generator
 
 import polars as pl
 import reflex as rx
-from reflex.style import color_mode, set_color_mode
+from reflex.style import color_mode, toggle_color_mode
 
 from .log import logger
 from .request_api import request_api
@@ -24,7 +24,7 @@ TODO:
 
 """
 
-color = "rgb(107,99,246)"
+color = "#2400B7A9"
 
 # 银行回单的表头
 BANK_SLIP_COLUMNS: list[dict[str, str]] = [
@@ -32,46 +32,55 @@ BANK_SLIP_COLUMNS: list[dict[str, str]] = [
         "title": "文件名",
         "id": "file_name",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "转账日期",
         "id": "trans_date",
         "type": "str",
+        "width": 100,
     },
     {
         "title": "付款人名称",
         "id": "buyer_name",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "付款人账号",
         "id": "buyer_account",
         "type": "str",
+        "width": 250,
     },
     {
         "title": "付款人开户行",
         "id": "buyer_bank",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "收款人名称",
         "id": "seller_name",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "收款人账号",
         "id": "seller_account",
         "type": "str",
+        "width": 250,
     },
     {
         "title": "收款人开户银行",
         "id": "seller_bank",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "转账金额",
         "id": "trans_amount",
         "type": "str",
+        "width": 100,
     },
 ]
 
@@ -82,58 +91,128 @@ INVOICE_COLUMNS: list[dict[str, str]] = [
         "title": "文件名",
         "id": "file_name",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "开票日期",
         "id": "invoice_date",
         "type": "str",
+        "width": 100,
     },
     {
         "title": "发票类型",
         "id": "invoice_type",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "发票号码",
         "id": "invoice_code",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "购买方名称",
         "id": "buyer_name",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "购买方统一社会信用代码",
         "id": "buyer_code",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "销售方名称",
         "id": "seller_name",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "销售方统一社会信用代码",
         "id": "seller_code",
         "type": "str",
+        "width": 200,
     },
     {
         "title": "税额",
         "id": "tax_amount",
         "type": "str",
+        "width": 50,
     },
     {
         "title": "不含税价格",
         "id": "price_excluded_tax",
         "type": "str",
+        "width": 100,
     },
     {
         "title": "价税合计",
         "id": "price_included_tax",
         "type": "str",
+        "width": 100,
     },
 ]
+
+
+test_invoice = [
+    [
+        "¥27.25.pdf",
+        "2024-04-20",
+        "电子发票(普通发票)",
+        "24137000000035267188",
+        "北京中企合规科技有限公司",
+        "91110108MA04GUU515",
+        "廊坊京东友盛贸易有限公司",
+        "91131022MA07LNYW91",
+        "3.13",
+        "24.12",
+        "27.25",
+    ],
+    [
+        "¥29.60.pdf",
+        "2024-05-25",
+        "电子发票(普通发票)",
+        "24117000000222945473",
+        "北京中企合规科技有限公司",
+        "91110108MA04GUU515",
+        "北京京东世纪信息技术有限公司",
+        "91110302562134916R",
+        "3.41",
+        "26.19",
+        "29.60",
+    ],
+]
+
+test_bank_slip = [
+    [
+        "北京银行.jpeg",
+        "2024-09-03",
+        "银联商务股份有限公司",
+        "未识别",
+        "中国银联股份有限公司",
+        "北京碧园文化发展有限公司",
+        "未识别",
+        "北京银行密云支行",
+        "6229.00",
+    ],
+    [
+        "91491726191886_.pic.jpg",
+        "2024-09-13",
+        "北京中企合规科技有限公司",
+        "10242000000466214",
+        "华夏银行北京学院路支行",
+        "百度时代网络技术(北京)有限公司",
+        "8661820285100018000920624",
+        "招商银行股份有限公司北京大屯路支行",
+        "10000.00",
+    ],
+]
+
+bank_slip_data_now = [[]]
+
+invoice_data_now = [[]]
 
 
 class UploadFile(rx.State):
@@ -144,6 +223,9 @@ class UploadFile(rx.State):
     mode: str = "invoice"  # 前端展示的选单,默认值是发票识别
     bank_slips_notification: bool = False
     invoice_notification: bool = False
+    test_mode: bool = False  # 测试模式，默认为 False
+    original_bank_slips_data: list[list[str]] = []  # 用于测试摸下保存原有数据
+    original_invoice_data: list[list[str]] = []  # 用于测试摸下保存原有数据
     # TODO 目前 Literal 类型存在 bug，等修复后将 mode 改为 Literal 类型
 
     # 将 state 需要经常用到的方法和属性抽象出一个配置列表，通过固定的方法获取当前 state 的识别，并执行相应的操作
@@ -174,6 +256,21 @@ class UploadFile(rx.State):
     def data_is_exists(self) -> bool:
         """这是一个 computed var，用于检查当前mode 选单下对应的 state var 是否存在数据，如果存在数据，则返回 True，否则返回 False。"""
         return bool(self.get_current_data)
+
+    def go_test(self, test_mode: bool):
+        if test_mode:
+            # 进入测试模式
+            if not self.test_mode:  # 只在首次进入测试模式时保存原始数据
+                self.original_bank_slips_data = self.bank_slips_data.copy()
+                self.original_invoice_data = self.invoice_data.copy()
+            self.bank_slips_data = test_bank_slip
+            self.invoice_data = test_invoice
+        else:
+            # 退出测试模式
+            self.bank_slips_data = self.original_bank_slips_data
+            self.invoice_data = self.original_invoice_data
+
+        self.test_mode = test_mode
 
     async def uni_request(self, file: rx.UploadFile) -> None:
         """处理单个银行回单识别和发票识别的请求：
@@ -237,6 +334,7 @@ class UploadFile(rx.State):
         # 批量调用 api 接口
         try:
             self.upload_loading = True  # 接收到文件后，更新 loading状态
+            self.test_mode = False
             yield
             start_time = time.time()
             tasks = [self.uni_request(file) for file in files]
@@ -303,28 +401,42 @@ class UploadFile(rx.State):
         setattr(self, self.MODE_CONFIG[self.mode]["notification_attr"], False)
 
 
-def dark_mode_toggle() -> rx.Component:
-    """全局切换亮/暗模式"""
-    return rx.segmented_control.root(
-        rx.segmented_control.item(
-            rx.icon(tag="monitor", size=20),
-            value="system",
+def test_mode_toggle() -> rx.Component:
+    return rx.hstack(
+        rx.text("演示模式", size="1"),
+        rx.switch(
+            checked=UploadFile.test_mode,
+            on_change=UploadFile.go_test,
+            color_scheme="violet",
+            variant="surface",
+            radius="full",
         ),
-        rx.segmented_control.item(
-            rx.icon(tag="sun", size=20),
-            value="light",
-        ),
-        rx.segmented_control.item(
-            rx.icon(tag="moon", size=20),
-            value="dark",
-        ),
-        on_change=set_color_mode,
-        variant="classic",
-        radius="large",
-        value=color_mode,
         position="fixed",
         bottom="10px",
+        right="10px",
+        align="center",
+    )
+
+
+def dark_mode_toggle() -> rx.Component:
+    """全局切换亮/暗模式"""
+    return rx.button(
+        rx.cond(
+            color_mode == "light",
+            rx.icon("sun", size=18),
+            rx.icon("moon", size=18),
+        ),
+        on_click=toggle_color_mode,
+        size="1",
+        color_scheme="violet",
+        variant="soft",
+        radius="large",
+        width="30px",
+        height="30px",
+        padding="0px",
+        position="fixed",
         left="10px",
+        bottom="10px",
     )
 
 
@@ -334,9 +446,8 @@ def header() -> rx.Component:
         rx.heading(  # 大标题
             "Easy Finance",
             as_="h1",
+            color_scheme="violet",
             size=rx.breakpoints(initial="8", xs="9"),
-            color=color,
-            high_contrast=True,
         ),
         rx.hstack(  # 小标题
             rx.text(
@@ -344,10 +455,10 @@ def header() -> rx.Component:
                 size=rx.breakpoints(initial="3", xs="6"),
             ),
             rx.badge(
-                "New",
+                rx.text("New", size="1"),
                 size="1",
                 color_scheme="violet",
-                variant="solid",
+                variant="soft",
                 padding="1px",
             ),
             spacing="1",
@@ -533,6 +644,7 @@ def index():
     """主页面"""
     return rx.vstack(
         dark_mode_toggle(),  # 明暗模式调整按钮
+        test_mode_toggle(),  # 测试模式按钮
         rx.vstack(
             header(),  # 标题
             # ------------------ 桌面端显示----------------------
@@ -627,4 +739,12 @@ def index():
     )
 
 
-app = rx.App()
+app = rx.App(
+    theme=rx.theme(
+        appearance="light",
+        has_background=True,
+        radius="large",
+        accent_color="violet",
+        gray_color="auto",
+    )
+)
