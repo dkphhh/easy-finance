@@ -255,7 +255,7 @@ class UploadFile(rx.State):
     @rx.var
     def data_is_exists(self) -> bool:
         """这是一个 computed var，用于检查当前mode 选单下对应的 state var 是否存在数据，如果存在数据，则返回 True，否则返回 False。"""
-        return bool(self.get_current_data)
+        return bool(self.invoice_data or self.bank_slips_data)
 
     def go_test(self, test_mode: bool):
         if test_mode:
