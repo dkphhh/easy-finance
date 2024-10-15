@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import aiohttp
+import httpx
 from aiolimiter import AsyncLimiter
 from dotenv import load_dotenv
 
@@ -155,49 +155,49 @@ async def request_api(
             file_base64, action
         )  # 生成api请求需要的各种参数
 
-        async with aiohttp.ClientSession() as session:
-            async with session.post(endpoint, data=payload, headers=headers) as resp:
-                json_data = await resp.json()
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(endpoint, data=payload, headers=headers)
+            json_data = resp.json()
 
-                try:
-                    resp = json_data["Response"]
-                    resp_type = resp["MixedInvoiceItems"][0]["SubType"]
-                except KeyError as err:
-                    logger.error(f"request_api 遇到异常{err},此时resp为：{resp}")
-                    raise KeyError(err)
-                else:
-                    match resp_type:
-                        case (
-                            "VatSpecialInvoice"
-                            | "VatCommonInvoice"
-                            | "VatElectronicCommonInvoice"
-                            | "VatElectronicSpecialInvoice"
-                            | "VatElectronicInvoiceBlockchain"
-                            | "VatElectronicInvoiceToll"
-                            | "VatElectronicSpecialInvoiceFull"
-                            | "VatElectronicInvoiceFull"
-                            | "VatInvoiceRoll"
-                            | "MachinePrintedInvoice"
-                        ):
-                            result_data = resp["MixedInvoiceItems"][0][
-                                "SingleInvoiceInfos"
-                            ][resp_type]
-                            result_type = "invoice"
-                            result_data = get_invoice_data(result_data)
-                        case "OtherInvoice":
-                            result_data = resp["MixedInvoiceItems"][0][
-                                "SingleInvoiceInfos"
-                            ][resp_type]["OtherInvoiceListItems"]
-                            result_type = "bank_slip"
-                            result_data = get_bank_slip_data(result_data)
+            try:
+                resp = json_data["Response"]
+                resp_type = resp["MixedInvoiceItems"][0]["SubType"]
+            except KeyError as err:
+                logger.error(f"request_api 遇到异常{err},此时resp为：{resp}")
+                raise KeyError(err)
+            else:
+                match resp_type:
+                    case (
+                        "VatSpecialInvoice"
+                        | "VatCommonInvoice"
+                        | "VatElectronicCommonInvoice"
+                        | "VatElectronicSpecialInvoice"
+                        | "VatElectronicInvoiceBlockchain"
+                        | "VatElectronicInvoiceToll"
+                        | "VatElectronicSpecialInvoiceFull"
+                        | "VatElectronicInvoiceFull"
+                        | "VatInvoiceRoll"
+                        | "MachinePrintedInvoice"
+                    ):
+                        result_data = resp["MixedInvoiceItems"][0][
+                            "SingleInvoiceInfos"
+                        ][resp_type]
+                        result_type = "invoice"
+                        result_data = get_invoice_data(result_data)
+                    case "OtherInvoice":
+                        result_data = resp["MixedInvoiceItems"][0][
+                            "SingleInvoiceInfos"
+                        ][resp_type]["OtherInvoiceListItems"]
+                        result_type = "bank_slip"
+                        result_data = get_bank_slip_data(result_data)
 
-                        case _:
-                            raise TypeError("暂时无法解析该类票据")
+                    case _:
+                        raise TypeError("暂时无法解析该类票据")
 
-                    return {
-                        "result_type": result_type,
-                        "result_data": result_data,
-                    }
+                return {
+                    "result_type": result_type,
+                    "result_data": result_data,
+                }
 
 
 if __name__ == "__main__":
