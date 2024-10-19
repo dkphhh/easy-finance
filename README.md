@@ -1,6 +1,7 @@
 # Easy Finance
 
 批量识别增值税发票与银行回单，基于腾讯云API和Reflex。
+
 Batch recognition of VAT invoices and bank slips, built based on Tencent Cloud API and Reflex.
 
 ## 使用方法 / How to use it
@@ -29,4 +30,5 @@ reflex run
 ```
 
 本项目仅为学习 Reflex 开发框架，关于更多关于 Reflex 的使用方法，请参考 [Reflex 官方文档](https://reflex.dev/docs/getting-started/introduction)。
+
 This project is just a practice for learning Reflex，more about how to use Reflex, please refer to [Reflex official documentation](https://reflex.dev/docs/getting-started/introduction).
