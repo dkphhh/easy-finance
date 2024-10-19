@@ -83,7 +83,7 @@ def get_bank_slip_data(bank_slip_info: list[dict]) -> list[str]:
     所以这个 function 还兼具识别用户上传其他无法图片的功能。
 
     Args:
-        img_base64 (str): api 回传的银行回单信息
+        bank_slip_info  list[dict]: api 回传的银行回单信息
 
     Returns:
          list[str | None]: 转化后的立标格式，包含以下内容：

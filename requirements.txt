@@ -134,10 +134,13 @@ readme-renderer==44.0
     # via twine
 redis==5.1.1
     # via reflex
-reflex==0.6.3
+reflex==0.6.4
     # via
     #   easy-finance (pyproject.toml)
+    #   reflex-ag-grid
     #   reflex-chakra
+reflex-ag-grid==0.0.8
+    # via easy-finance (pyproject.toml)
 reflex-chakra==0.6.1
     # via reflex
 reflex-hosting-cli==0.1.13

@@ -5,7 +5,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[
-        logging.FileHandler("./extract-bank-slip-data.log"),  # 输出到文件
+        logging.FileHandler("./EasyFinance.log"),  # 输出到文件
         logging.StreamHandler(),  # 输出到控制台
     ],
 )

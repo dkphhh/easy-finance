@@ -10,8 +10,8 @@ import reflex as rx
 
 from easy_finance.basic_setting import color
 
-from ..log import logger
-from ..request_api import request_api
+from ..utils.log import logger
+from ..utils.request_api import request_api
 
 # 银行回单的表头
 BANK_SLIP_COLUMNS: list[dict[str, str]] = [
@@ -206,7 +206,7 @@ class UploadFile(rx.State):
     bank_slips_data: rx.Field[list[list[str]]] = rx.field([])  # 存储银行回单数据
     invoice_data: rx.Field[list[list[str]]] = rx.field([])  # 存储发票数据
     upload_loading: rx.Field[bool] = rx.field(False)  # 判断 dropzone 是否等待的状态判断
-    download_loding: rx.Field[bool] = rx.field(
+    download_loading: rx.Field[bool] = rx.field(
         False
     )  # 判断 download button 是否是等待状态
     mode: rx.Field[str] = rx.field("invoice")  # 前端展示的选单,默认值是发票识别
@@ -359,7 +359,7 @@ class UploadFile(rx.State):
         Yields:
             Generator: yield 一个 rx.download 事件，将数据下载为 excel 表
         """
-        self.download_loding = True  # 将下载按钮的状态切换为 loading
+        self.download_loading = True  # 将下载按钮的状态切换为 loading
         yield
 
         data = [
@@ -379,7 +379,7 @@ class UploadFile(rx.State):
         buffer = io.BytesIO()  # 生成一个 BytesIO 对象，用于存储 excel 文件
         df.write_excel(buffer)  # 将 excel 文件写入 BytesIO 对象
 
-        self.download_loding = False  # 文件准备结束，结束下载按钮的 loading 状态
+        self.download_loading = False  # 文件准备结束，结束下载按钮的 loading 状态
 
         yield rx.download(data=buffer.getvalue(), filename=f"{file_name}.xlsx")
 
@@ -400,7 +400,7 @@ def test_mode_for_recognize() -> rx.Component:
             radius="full",
         ),
         position="fixed",
-        bottom="10px",
+        top="10px",
         right="10px",
         align="center",
     )
@@ -472,11 +472,13 @@ def upload_zone(
         max_files=10,
         disabled=is_loading,
         no_keyboard=True,
-        on_drop=UploadFile.handle_upload(rx.upload_files(upload_id=upload_id)),  # type:ignore
+        on_drop=UploadFile.handle_upload(
+            rx.upload_files(upload_id=upload_id)
+        ),  # type:ignore
         align="center",
         justify="center",
         border_radius="2%",
-        width=rx.breakpoints(initial="80vw", sm="50vw", md="30vw"),
+        width=rx.breakpoints(initial="80vw", md="30vw"),
         height="35vh",
         padding="20px",
         margin_x="3px",
@@ -508,12 +510,12 @@ def render_data() -> rx.Component:
             min_column_width=100,
             max_column_width=300,
             max_column_auto_width=300,
-            width=rx.breakpoints(initial="90vw", sm="50vw", md="60vw"),
-            height=rx.breakpoints(xs="30vh"),
+            width=rx.breakpoints(initial="90vw", md="60vw"),
+            height=rx.breakpoints(md="30vh"),
             border_radius="2%",
         ),
         rx.cond(  # 一个是否在准备下载文件的条件判断，如果有文件正在准备下载则显示加载按钮
-            UploadFile.download_loding,
+            UploadFile.download_loading,
             rx.button(
                 loading=True,
                 color=color,
@@ -608,6 +610,7 @@ def recognize_title() -> rx.Component:
             as_="h2",
             color_scheme="violet",
             size=rx.breakpoints(initial="8", xs="9"),
+            margin_top=rx.breakpoints(initial="30px", md="0px"),
         ),
         rx.hstack(  # 小标题
             rx.text(
@@ -631,6 +634,7 @@ def recognize_title() -> rx.Component:
 
 def recognize_page() -> rx.Component:
     return rx.vstack(
+        test_mode_for_recognize(),
         recognize_title(),
         # ------------------ 桌面端显示----------------------
         rx.desktop_only(

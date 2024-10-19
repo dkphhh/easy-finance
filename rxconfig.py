@@ -12,4 +12,15 @@ config = rx.Config(
     loglevel="info",
     api_url=api_url,
     db_url="sqlite:///reflex.db",
+    tailwind={
+        "content": [
+            "./app/**/*.py",
+            "./app/**/*.js",
+            "./app/**/*.html",
+        ],
+        "theme": {
+            "extend": {},
+        },
+        "plugins": ["@tailwindcss/typography"],
+    },
 )

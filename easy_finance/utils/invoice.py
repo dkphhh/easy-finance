@@ -7,7 +7,7 @@ def get_invoice_data(invoice_info: dict[str, str]) -> list[str]:
     """将 api 回传的发票信息整理成前端使用的标准格式
 
     Args:
-        file_base64 (str): api 回传的发票信息
+        invoice_info (dict[str, str]): api 回传的发票信息
 
     Returns:
         list[str]: 包含已经识别信息的列表，顺序如下：

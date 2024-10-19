@@ -16,3 +16,4 @@ compose.prod.yaml
 download_cache
 uploaded_files
 测试文件
+alembic.ini
