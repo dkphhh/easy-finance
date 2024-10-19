@@ -134,7 +134,7 @@ readme-renderer==44.0
     # via twine
 redis==5.1.1
     # via reflex
-reflex==0.6.2.post1
+reflex==0.6.3
     # via
     #   easy-finance (pyproject.toml)
     #   reflex-chakra
@@ -156,7 +156,7 @@ rich==13.9.2
     #   reflex-hosting-cli
     #   twine
     #   typer
-setuptools==70.1.1
+setuptools==75.2.0
     # via reflex
 shellingham==1.5.4
     # via typer
