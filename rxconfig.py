@@ -7,4 +7,9 @@ load_dotenv()
 
 api_url = os.getenv("API_URL")
 
-config = rx.Config(app_name="easy_finance", loglevel="info", api_url=api_url)
+config = rx.Config(
+    app_name="easy_finance",
+    loglevel="info",
+    api_url=api_url,
+    db_url="sqlite:///reflex.db",
+)

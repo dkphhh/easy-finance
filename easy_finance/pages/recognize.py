@@ -203,14 +203,16 @@ invoice_data_now = [[]]
 
 
 class UploadFile(rx.State):
-    bank_slips_data: list[list[str]] = []  # 存储银行回单数据
-    invoice_data: list[list[str]] = []  # 存储发票数据
-    upload_loading: bool = False  # 判断 dropzone 是否等待的状态判断
-    download_loding: bool = False  # 判断 download button 是否是等待状态
-    mode: str = "invoice"  # 前端展示的选单,默认值是发票识别
-    bank_slips_notification: bool = False
-    invoice_notification: bool = False
-    test_mode: bool = False  # 测试模式，默认为 False
+    bank_slips_data: rx.Field[list[list[str]]] = rx.field([])  # 存储银行回单数据
+    invoice_data: rx.Field[list[list[str]]] = rx.field([])  # 存储发票数据
+    upload_loading: rx.Field[bool] = rx.field(False)  # 判断 dropzone 是否等待的状态判断
+    download_loding: rx.Field[bool] = rx.field(
+        False
+    )  # 判断 download button 是否是等待状态
+    mode: rx.Field[str] = rx.field("invoice")  # 前端展示的选单,默认值是发票识别
+    bank_slips_notification: rx.Field[bool] = rx.field(False)
+    invoice_notification: rx.Field[bool] = rx.field(False)
+    test_mode: rx.Field[bool] = rx.field(False)  # 测试模式，默认为 False
     original_bank_slips_data: list[list[str]] = []  # 用于测试摸下保存原有数据
     original_invoice_data: list[list[str]] = []  # 用于测试摸下保存原有数据
     # TODO 目前 Literal 类型存在 bug，等修复后将 mode 改为 Literal 类型
@@ -246,6 +248,7 @@ class UploadFile(rx.State):
         """这是一个 computed var，用于检查当前mode 选单下对应的 state var 是否存在数据，如果存在数据，则返回 True，否则返回 False。"""
         return bool(self.invoice_data or self.bank_slips_data)
 
+    @rx.event
     def go_test(self, test_mode: bool):
         if test_mode:
             # 进入测试模式
@@ -307,6 +310,7 @@ class UploadFile(rx.State):
             logger.error(f"解析文件「{filename}」过程中遇到错误：{e}。")
             raise ValueError(f"解析文件「{filename}」过程中遇到错误：{e}。")
 
+    @rx.event
     async def handle_upload(self, files: list[rx.UploadFile]):
         """用户上传文件后的处理函数，将文件转换为base64编码，将编码后的文件传递给相应的上游 api 处理，返回格式化后的处理结果
 
@@ -335,6 +339,7 @@ class UploadFile(rx.State):
         finally:
             self.upload_loading = False  # 文件上传结束，更新 loading 状态
 
+    @rx.event
     def get_edited_data(self, pos: tuple[int, int], val):
         """处理页面表格更新的函数，将更新的数据存储在对应选单的数据集中，这样用户编辑后页面的数据也能同步更新。
 
@@ -347,6 +352,7 @@ class UploadFile(rx.State):
         current_data[row][col] = val["data"]
         setattr(self, self.MODE_CONFIG[self.mode]["data_attr"], current_data)
 
+    @rx.event
     def download_to_excel(self) -> Generator:
         """将 bank_slips_date 或 invoice_data 内的信息下载为 excel 表
 
@@ -377,6 +383,7 @@ class UploadFile(rx.State):
 
         yield rx.download(data=buffer.getvalue(), filename=f"{file_name}.xlsx")
 
+    @rx.event
     def set_notification_false(self):
         """将 notification 的状态切换为 False，这样 notification 就会消失"""
         setattr(self, self.MODE_CONFIG[self.mode]["notification_attr"], False)
@@ -406,47 +413,6 @@ def notification_badge() -> rx.Component:
         border_radius="100%",
         height="7px",
         width="7px",
-    )
-
-
-def process_mode_toggle() -> rx.Component:
-    """
-    处理按钮，也就是 UploadFile.mode 的值
-    只有在有数据时才会显示，如果没有数据就不会显示
-    """
-    return rx.cond(
-        UploadFile.data_is_exists,
-        rx.segmented_control.root(
-            rx.segmented_control.item(
-                rx.hstack(
-                    rx.icon(tag="ticket", size=20),
-                    rx.text("增值税发票", size="3"),
-                    rx.cond(
-                        UploadFile.invoice_notification,
-                        notification_badge(),
-                    ),
-                ),
-                width="180px",
-                value="invoice",
-            ),
-            rx.segmented_control.item(
-                rx.hstack(
-                    rx.icon(tag="landmark", size=20),
-                    rx.text("银行回单", size="3"),
-                    rx.cond(
-                        UploadFile.bank_slips_notification,
-                        notification_badge(),
-                    ),
-                ),
-                width="180px",
-                value="bank_slip",
-            ),
-            on_change=UploadFile.set_mode,  # type:ignore
-            on_click=UploadFile.set_notification_false,
-            variant="classic",
-            radius="large",
-            value=UploadFile.mode,
-        ),
     )
 
 
@@ -487,15 +453,12 @@ def upload_zone(
                 width="82px",
                 height="32px",
             ),
-            rx.vstack(
-                rx.foreach(hint_text, render_hint_text),
-                align="center",
-                spacing="1",
-            ),
+            rx.foreach(hint_text, render_hint_text),
             align="center",
             justify="center",
             width="100%",
             height="100%",
+            spacing="1",
         ),
         id=upload_id,
         border=f"1px dotted {color}",
@@ -513,13 +476,14 @@ def upload_zone(
         align="center",
         justify="center",
         border_radius="2%",
-        width=rx.breakpoints(initial="80vw", sm="60vw", md="40vw", lg="500px"),
-        height="30vh",
+        width=rx.breakpoints(initial="80vw", sm="50vw", md="30vw"),
+        height="35vh",
         padding="20px",
+        margin_x="3px",
     )
 
 
-def render_bank_slip_data() -> rx.Component:
+def render_data() -> rx.Component:
     """生成展示识别结果的表格
 
     Returns:
@@ -544,136 +508,162 @@ def render_bank_slip_data() -> rx.Component:
             min_column_width=100,
             max_column_width=300,
             max_column_auto_width=300,
-            width=rx.breakpoints(initial="90vw", sm="60vw", md="55vw", lg="60vw"),
+            width=rx.breakpoints(initial="90vw", sm="50vw", md="60vw"),
             height=rx.breakpoints(xs="30vh"),
             border_radius="2%",
         ),
-        rx.vstack(
-            rx.cond(  # 一个是否在准备下载文件的条件判断，如果有文件正在准备下载则显示加载按钮
-                UploadFile.download_loding,
-                rx.button(
-                    loading=True,
-                    color=color,
-                    bg="white",
-                    border=f"1px solid {color}",
-                    width="82px",
-                    height="32px",
-                ),
-                rx.button(
-                    "下载结果",
-                    on_click=UploadFile.download_to_excel,
-                    color=color,
-                    bg="white",
-                    border=f"1px solid {color}",
-                ),
+        rx.cond(  # 一个是否在准备下载文件的条件判断，如果有文件正在准备下载则显示加载按钮
+            UploadFile.download_loding,
+            rx.button(
+                loading=True,
+                color=color,
+                bg="white",
+                border=f"1px solid {color}",
+                width="82px",
+                height="32px",
             ),
-            rx.text("下载为 Excel 表", size="1"),
-            align="center",
-            spacing="2",
-        ),
-        rx.cond(  # 提醒
-            UploadFile.data_is_exists,
-            rx.callout(
-                "如识别结果有误，可双击单元格修改。",
-                icon="info",
-                color_scheme="violet",
+            rx.button(
+                "下载结果",
+                on_click=UploadFile.download_to_excel,
+                color=color,
+                bg="white",
+                border=f"1px solid {color}",
             ),
         ),
+        rx.text("下载为 Excel 表", size="1"),
+        rx.callout(
+            "如识别结果有误，可双击单元格修改。",
+            icon="info",
+            color_scheme="violet",
+        ),
+        margin_top="5px",
         align="center",
         justify="center",
-        margin_left=rx.breakpoints(initial="0px", md="10px"),
+        margin="3px",
         spacing="3",
     )
 
 
-def test_component() -> rx.Component:
-    return rx.cond(
-        UploadFile.test_mode,
-        rx.container(
-            rx.vstack(
-                rx.box(
-                    rx.text("test"),
-                    color="white",
-                    background_color="black",
+def process_mode_tabs() -> rx.Component:
+    """
+    处理tab切换按钮，也就是 UploadFile.mode 的值
+    只有在有数据时才会显示，如果没有数据就不会显示
+    这个 tab 已经包含了需要渲染的数据表格
+    """
+    return rx.tabs.root(
+        rx.tabs.list(
+            rx.tabs.trigger(
+                rx.hstack(
+                    rx.icon("ticket", size=15),
+                    rx.text("增值税发票", size="2"),
+                    rx.cond(
+                        UploadFile.invoice_notification,
+                        notification_badge(),
+                    ),
+                    justify="center",
+                    align="center",
+                    width="120px",
+                    spacing="2",
                 ),
-                rx.box(
-                    rx.text("box"),
-                    color="white",
-                    background_color="black",
-                ),
-                rx.box(
-                    rx.text("test"),
-                    color="white",
-                    background_color="black",
-                ),
-                spacing="1",
-                align="stretch",
-                justify="end",
-                height="100vh",
-                width="100vw",
+                value="invoice",
+                on_click=UploadFile.set_notification_false,
             ),
-            height="100vh",
-            width="100vw",
+            rx.tabs.trigger(
+                rx.hstack(
+                    rx.icon("landmark", size=15),
+                    rx.text("银行回单", size="2"),
+                    rx.cond(
+                        UploadFile.bank_slips_notification,
+                        notification_badge(),
+                    ),
+                    width="120px",
+                    justify="center",
+                    align="center",
+                    spacing="2",
+                ),
+                value="bank_slip",
+                on_click=UploadFile.set_notification_false,
+            ),
         ),
+        rx.tabs.content(
+            render_data(),
+            value="invoice",
+        ),
+        rx.tabs.content(
+            render_data(),
+            value="bank_slip",
+        ),
+        on_change=UploadFile.set_mode,  # type:ignore
+        variant="classic",
+        radius="large",
+        value=UploadFile.mode,
     )
 
 
 def recognize_title() -> rx.Component:
-    return rx.hstack(  # 小标题
-        rx.text(
-            "批量识别增值税发票与银行回单",
-            size=rx.breakpoints(initial="3", xs="6"),
-        ),
-        rx.badge(
-            rx.text("New", size="1"),
-            size="1",
+    """票据识别模块的单页小标题"""
+    return rx.vstack(
+        rx.heading(  # 大标题
+            "发票转Excel",
+            as_="h2",
             color_scheme="violet",
-            variant="soft",
-            padding="1px",
+            size=rx.breakpoints(initial="8", xs="9"),
         ),
-        spacing="1",
-        justify="start",
+        rx.hstack(  # 小标题
+            rx.text(
+                "批量识别增值税发票与银行回单,导出为Excel",
+                size=rx.breakpoints(initial="3", xs="6"),
+            ),
+            rx.badge(
+                rx.text("New", size="1"),
+                size="1",
+                color_scheme="violet",
+                variant="soft",
+                padding="1px",
+            ),
+            spacing="1",
+            justify="start",
+        ),
+        margin_bottom="15px",
+        align="center",
     )
 
 
 def recognize_page() -> rx.Component:
     return rx.vstack(
+        recognize_title(),
         # ------------------ 桌面端显示----------------------
         rx.desktop_only(
-            rx.vstack(
-                process_mode_toggle(),  # 选单切换按钮
-                rx.hstack(
-                    rx.cond(
-                        # 文件上传区
-                        # 用于检查是否正在上传的条件判断，如果有文件在上传，显示加载状态
-                        UploadFile.upload_loading,
-                        upload_zone(
-                            is_loading=True,
-                            color=color,
-                            hint_text=["文件上传中……"],
-                        ),
-                        upload_zone(
-                            is_loading=False,
-                            color=color,
-                            hint_text=[
-                                "将发票或银行回单文件拖入框内",
-                                "支持文件格式：.jpg、.jpeg、.png、.pdf",
-                                "一次最多上传10个文件，可分批多次上传",
-                            ],
-                        ),
+            rx.hstack(
+                rx.cond(
+                    # 文件上传区
+                    # 用于检查是否正在上传的条件判断，如果有文件在上传，显示加载状态
+                    UploadFile.upload_loading,
+                    upload_zone(
+                        is_loading=True,
+                        color=color,
+                        hint_text=["文件上传中……"],
                     ),
-                    rx.cond(
-                        # 表格显示区
-                        # 检查 bank_slips_date内是否有数据，如果有显示表格和下载按钮
-                        UploadFile.data_is_exists,
-                        render_bank_slip_data(),
+                    upload_zone(
+                        is_loading=False,
+                        color=color,
+                        hint_text=[
+                            "将发票或银行回单文件拖入框内",
+                            "支持文件格式：.jpg、.jpeg、.png、.pdf",
+                            "一次最多上传10个文件，可分批多次上传",
+                        ],
                     ),
-                    align="start",
-                    justify="center",
-                    width="100%",
-                    height="100%",
                 ),
-                align="center",
+                rx.cond(
+                    # 表格显示区
+                    # 检查 bank_slips_date内是否有数据，如果有显示表格和下载按钮
+                    UploadFile.data_is_exists,
+                    process_mode_tabs(),
+                ),
+                align="start",
+                justify="center",
+                width="100%",
+                height="100%",
             ),
         ),
         # ------------------ 移动端显示-----------------
@@ -698,12 +688,11 @@ def recognize_page() -> rx.Component:
                         ],
                     ),
                 ),
-                process_mode_toggle(),  # 切换选择
                 rx.cond(
                     # 表格显示区
                     # 检查 bank_slips_date内是否有数据，如果有显示表格和下载按钮
                     UploadFile.data_is_exists,
-                    render_bank_slip_data(),
+                    process_mode_tabs(),
                 ),
                 align="center",
                 justify="center",
@@ -711,4 +700,8 @@ def recognize_page() -> rx.Component:
                 height="100%",
             ),
         ),
+        align="center",
+        justify="center",
+        width="100%",
+        height="100%",
     )

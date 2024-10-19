@@ -1,72 +1,22 @@
 import reflex as rx
-from reflex.style import color_mode, toggle_color_mode
 
+from .components import dark_mode_toggle
 from .pages.recognize import (
     recognize_page,
-    recognize_title,
     test_mode_for_recognize,
 )
 
 """
 TODO:
 
-2. 增加一个将结果回传到飞书表格的功能
-3. 美化table,给未识别内容标黄突出显示
-4. 增加一个删除内容的警告
+1.新增功能模块：批量票据文件名改名
+2.新增功能模块：数字大小写转换
+3.美化table,给未识别内容标黄突出显示
+4.增加一个删除内容的警告
+5.增加一个将结果回传到飞书表格的功能
 
 
 """
-
-
-# class IndexState(rx.State):
-    
-
-
-
-
-
-
-
-
-
-def dark_mode_toggle() -> rx.Component:
-    """全局切换亮/暗模式"""
-    return rx.button(
-        rx.cond(
-            color_mode == "light",
-            rx.icon("sun", size=18),
-            rx.icon("moon", size=18),
-        ),
-        on_click=toggle_color_mode,
-        size="1",
-        color_scheme="violet",
-        variant="soft",
-        radius="large",
-        width="30px",
-        height="30px",
-        padding="0px",
-        position="fixed",
-        left="10px",
-        bottom="10px",
-    )
-
-
-def header() -> rx.Component:
-    """标题栏"""
-    return rx.vstack(
-        rx.heading(  # 大标题
-            "Easy Finance",
-            as_="h1",
-            color_scheme="violet",
-            size=rx.breakpoints(initial="8", xs="9"),
-        ),
-        recognize_title(),
-        margin_bottom="10px",
-        align="center",
-    )
-
-
-# --------------------------- 页面构建 -------------------
 
 
 meta = [{"name": "keywords", "content": "发票,银行回单,图片,PDF,识别,转Excel"}]
@@ -84,12 +34,9 @@ def index():
         dark_mode_toggle(),  # 明暗模式调整按钮
         test_mode_for_recognize(),  # 测试模式按钮
         rx.vstack(
-            header(),  # 标题
             recognize_page(),  # 发票与回单识别页面
-            align="center",
-            justify="center",
             width="100vw",
-            height=rx.breakpoints(initial="100%", xs="100vh"),
+            height=rx.breakpoints(initial="100%", md="100vh"),
             spacing="1",
         ),
     )
