@@ -1,0 +1,62 @@
+import reflex as rx
+from sqlmodel import Field
+from datetime import datetime, date
+from typing import Annotated
+
+
+class User(rx.Model, table=True):
+    id: Annotated[int | None, Field(primary_key=True)] = None
+    username: str
+    email: str
+    password: str
+
+
+def create_users(users: list[User]):
+    with rx.session() as session:
+        for user in users:
+            session.add(user)
+        session.commit()
+
+        # 手动刷新
+        for user in users:
+            session.refresh(user)
+
+    userid_list = [user.id for user in users]
+
+    return userid_list
+
+
+class JournalAccount(rx.Model, table=True):
+    id: Annotated[int | None, Field(primary_key=True)] = None
+    trade_date: date  # 交易发生的时间
+    description: str = ""  # 关于这笔流水的说明
+    additional_info: str = ""  # 备注
+    amount: str  # 金额
+    category: str = ""  # 分类
+    payer: str  # 付款方
+    receiver: str  # 收款方
+    bank_slip_url: str = ""  # 银行回单文件链接
+    tax_invoice_url: str = ""  # 发票文件链接
+    created_datetime: datetime = datetime.now()  # 记录生成时间
+
+    @classmethod
+    def create_records(cls, records: list[dict]):
+        with rx.session() as session:
+
+            new_records = []
+
+            for record in records:
+                new_record = JournalAccount(**record)
+                new_records.append(new_record)
+                session.add(new_record)
+
+            session.commit()
+
+            for record in new_records:
+                session.refresh(record)
+
+            return new_records
+
+
+if __name__ == "__main__":
+    pass

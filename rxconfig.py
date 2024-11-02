@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-api_url = os.getenv("API_URL")
+api_url = os.getenv("BACK_END")
 
 config = rx.Config(
     app_name="easy_finance",

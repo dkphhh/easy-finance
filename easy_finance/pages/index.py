@@ -3,7 +3,7 @@ import os
 import reflex as rx
 
 from .components import dark_mode_toggle
-from .recognize import recognize_page
+from .upload import upload_and_send
 
 PASSWORD = os.getenv("PASSWORD")
 
@@ -45,7 +45,7 @@ def index() -> rx.Component:
         rx.cond(  # type:ignore
             PassState.check,
             rx.vstack(
-                recognize_page(),  # 发票与回单识别页面
+                upload_and_send(),  # 上传银行回单、识别、将结果上传到数据库
                 width="100vw",
                 height=rx.breakpoints(initial="100%", md="100vh"),
                 spacing="1",

@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import reflex as rx
 import base64
 import re
+
 from .log import logger
 import string
 import random
@@ -16,8 +17,9 @@ load_dotenv()
 
 
 # 从环境变量中获取密钥参数
-api_key = os.getenv("APIKEY")
-secret_key = os.getenv("SECRETKEY")
+API_KEY = os.getenv("APIKEY")
+SECRET_KEY = os.getenv("SECRETKEY")
+BACK_END = os.getenv("BACK_END")
 
 rate_limit = AsyncLimiter(
     3, 1
@@ -60,7 +62,7 @@ def generate_random_string(length=6) -> str:
     return "".join(random.choice(characters) for _ in range(length))
 
 
-def parse_date(date_string: str) -> date:
+def parse_date(date_string: str) -> date | str:
     """将银行回单内的日期时间字符串转化为 datetime 格式
     简单来说，就是把 DATE_TO_REMOVE 里的所有字符全部删除
     然后转化为 date 格式
@@ -69,12 +71,18 @@ def parse_date(date_string: str) -> date:
         date_string (str): 日期格式的字符串
 
     Returns:
-        str: 纯数字的日期字符串
+         date | str: date 对象或者空字符串 ""
     """
-    trans_table = str.maketrans("", "", DATE_TO_REMOVE)
-    date_num = date_string.translate(trans_table)
-    result = date.fromisoformat(date_num)
-    return result
+    try:
+        trans_table = str.maketrans("", "", DATE_TO_REMOVE)
+        date_num = date_string.translate(trans_table)
+        result = date.fromisoformat(date_num)
+        return result
+    except (ValueError, TypeError):
+        logger.error(f"输入的 date_string 为:{date_string},无法正常完成解析")
+        result = ""
+
+        return result
 
 
 def extract_amount(amount_str: str) -> str:
@@ -86,13 +94,19 @@ def extract_amount(amount_str: str) -> str:
     Returns:
         str: 只包含数字和小数点的字符串
     """
-    return AMOUNT_PATTERN.sub("", amount_str)
 
+    try:
 
-def parse_none(value: str | None) -> str:
-    """将所有 None 串转化为 空字符串 "" """
+        result = AMOUNT_PATTERN.sub("", amount_str)
 
-    return "" if value is None else value
+        return result
+
+    except (ValueError, TypeError):
+
+        logger.error(f"输入的 amount_str 为:{amount_str},无法正常完成解析")
+        result = ""
+
+        return result
 
 
 def process_bank_slip(words_result: dict) -> dict:
@@ -109,13 +123,25 @@ def process_bank_slip(words_result: dict) -> dict:
     }
 
 
-async def request_api(file: rx.UploadFile, mode: Literal["bank_slip", "vat_invoice"]):
+async def request_api(
+    file: rx.UploadFile, mode: Literal["bank_slip", "vat_invoice"]
+) -> dict:
+    """
+    想百度api发出请求，将文件（图片/pdf）上传，根据模式不同上传到不同的 api 接口
+    Args:
+        file: 用户上传的 文件（图片/pdf）
+        mode: 识别模式，目前支持两种模式，银行回单识别（bank_slip）或增值税发票识别（vat_invoice）
+
+    Returns:
+        返回识别结果的字典。
+
+    """
 
     async with httpx.AsyncClient() as client:
 
         # ---------获取token-----------
 
-        token_url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={api_key}&client_secret={secret_key}"
+        token_url = f"https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id={API_KEY}&client_secret={SECRET_KEY}"
 
         token_payload = ""
         token_headers = {
@@ -173,7 +199,7 @@ async def request_api(file: rx.UploadFile, mode: Literal["bank_slip", "vat_invoi
 
                 result = process_bank_slip(words_result)
 
-                result["bank_slip_url"] = f"/_upload/{new_filename}"
+                result["bank_slip_url"] = f"{BACK_END}/_upload/{new_filename}"
 
                 logger.info(result)
 
