@@ -195,7 +195,19 @@ async def request_api(
 
                 bank_slip_result = bank_slip_res.json()
 
-                words_result = bank_slip_result["words_result"]
+                logger.info(
+                    f"正在处理文件：{file.filename};API返回的银行回单信息：{bank_slip_result}"
+                )
+
+                words_result: dict = bank_slip_result["words_result"]
+
+                # 校验api 回传数据是否都是空值
+                validate_result = [i[0]["word"] for i in words_result.values()]
+                if all(i == "" for i in validate_result):
+                    logger.error(f"系统报错：「{file.filename}」似乎不是银行回单")
+                    raise ValueError(
+                        f"用户上传的文件「{file.filename}」似乎不是银行回单"
+                    )
 
                 result = process_bank_slip(words_result)
 

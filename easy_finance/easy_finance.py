@@ -1,7 +1,5 @@
 import reflex as rx
 
-
-
 """
 TODO:
 
@@ -15,15 +13,13 @@ TODO:
 """
 
 
-
-
 app = rx.App(
     theme=rx.theme(
         appearance="inherit",
-        has_background=True,
-        radius="large",
-        accent_color="violet",
-        gray_color="auto",
-        panel_background="solid",
-    ),
+        accent_color="gray",
+        gray_color="slate",
+        radius="full",
+        panel_background="translucent",
+        scaling="100%",
+    )
 )

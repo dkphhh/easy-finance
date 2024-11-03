@@ -2,7 +2,7 @@ import os
 
 import reflex as rx
 
-from .components import dark_mode_toggle
+from .components import nav_bar
 from .upload import upload_and_send
 
 PASSWORD = os.getenv("PASSWORD")
@@ -34,21 +34,21 @@ meta = [{"name": "keywords", "content": "发票,银行回单,图片,PDF,识别,�
 
 @rx.page(
     route="/",
-    title="Easy Finance-发票识别，银行回单识别",
-    description="批量识别发票与银行回单，发票、银行回单图片、PDF转Excel表格",
+    title="快捷记账-EasyOffice",
+    description="自动识别银行回单，并导入到数据库",
     meta=meta,
 )
 def index() -> rx.Component:
     """主页面"""
     return rx.fragment(
-        dark_mode_toggle(),  # 明暗模式调整按钮
         rx.cond(  # type:ignore
             PassState.check,
             rx.vstack(
+                nav_bar(),
                 upload_and_send(),  # 上传银行回单、识别、将结果上传到数据库
                 width="100vw",
-                height=rx.breakpoints(initial="100%", md="100vh"),
                 spacing="1",
+                align="center",
             ),
             rx.form(  # 输入密码的表单
                 rx.hstack(

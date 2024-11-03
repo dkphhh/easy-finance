@@ -8,7 +8,6 @@ from typing import Generator
 import polars as pl
 import reflex as rx
 
-from easy_finance.basic_setting import color
 
 from ..utils.log import logger
 from ..utils.request_api import request_api

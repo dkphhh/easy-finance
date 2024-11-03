@@ -1,4 +1,5 @@
 import reflex as rx
+
 from ..utils.request_api import request_api
 from reflex_ag_grid import ag_grid
 from ..models import JournalAccount
@@ -7,6 +8,7 @@ from datetime import datetime, timedelta
 
 class UploadState(rx.State):
 
+    up_loading: bool = False
     upload_data: list[dict] = []
 
     @rx.var
@@ -25,8 +27,25 @@ class UploadState(rx.State):
             files: 用户上传的文件
 
         """
-        resp_list = [await request_api(file=f, mode="bank_slip") for f in files]
-        self.upload_data.extend(resp_list)
+        self.up_loading = True  # 显示加载状态
+
+        yield
+
+        if len(files) > 5:
+            yield rx.toast.error(f"一次最多传5个文件，你传了{len(files)}个")
+
+        else:
+            try:
+                # print(len(files))
+                # print([file.filename for file in files])
+                # await asyncio.sleep(2)
+                resp_list = [await request_api(file=f, mode="bank_slip") for f in files]
+                self.upload_data.extend(resp_list)
+            except ValueError as e:
+                yield rx.toast.error(f"系统报错：{e}")
+
+            finally:
+                self.up_loading = False
 
     def cell_value_changed(self, row, col_field, new_value) -> None:
         """
@@ -173,7 +192,7 @@ def ag_grid_zone() -> rx.Component:
             column_defs=bank_slip_column_defs,
             on_cell_value_changed=UploadState.cell_value_changed,
             width="90vw",
-            height="50vh",
+            height="60vh",
             pagination=True,
             pagination_page_size=10,
             pagination_page_size_selector=[10, 50, 100],
@@ -183,21 +202,43 @@ def ag_grid_zone() -> rx.Component:
 
 def upload_zone() -> rx.Component:
     return rx.upload(
-        rx.text("Drag and drop files here or click to select files"),
+        rx.cond(
+            UploadState.up_loading,
+            rx.hstack(
+                rx.spinner(size="3"),
+                align="center",
+                justify="center",
+                height="100%",
+            ),
+            rx.vstack(
+                rx.text("点击方框，或将文件拖入框内", size="1"),
+                rx.text("支持 .jpg .jpeg .png .bmp .pdf 文件", size="1"),
+                rx.text("最多同时上传5个文件，单文件最大5mb", size="1"),
+                spacing="1",
+                height="100%",
+                justify="center",
+                align="center",
+            ),
+        ),
         id="upload1",
+        multiple=True,
+        # max_files=5, # Reflex 给的这个参数似乎不能限制前端上传的文件数量，所以我采用了后端验证的方式
+        max_size=5000000,  # 百度api最大文件限制 8mb
         border=f"1px dotted",
-        padding="5em",
-        width="40vw",
-        height="30vh",
-        on_drop=UploadState.handle_upload(
-            rx.upload_files(upload_id="upload1")
-        ),  # type:ignore
+        class_name="rounded-md",
+        margin_top="10px",
+        width="90vw",
+        height="150px",
+        padding="0px",
         accept={
             "image/png": [".png"],
             "image/jpeg": [".jpg", ".jpeg"],
             "image/bmp": [".bmp"],
             "application/pdf": [".pdf"],
         },
+        on_drop=UploadState.handle_upload(
+            rx.upload_files(upload_id="upload1")
+        ),  # type:ignore
     )
 
 
@@ -205,9 +246,13 @@ def upload_and_send() -> rx.Component:
     return rx.vstack(
         upload_zone(),
         ag_grid_zone(),
-        rx.button("上传数据", on_click=UploadState.send_to_database),
+        rx.button(
+            "上传数据",
+            on_click=UploadState.send_to_database,
+            color=rx.color("slate", 2),
+            bg=rx.color("slate", 12),
+        ),
         width="100%",
         align="center",
         justify="center",
-        padding="2em",
     )

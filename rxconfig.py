@@ -13,11 +13,6 @@ config = rx.Config(
     api_url=api_url,
     db_url="sqlite:///reflex.db",
     tailwind={
-        "content": [
-            "./app/**/*.py",
-            "./app/**/*.js",
-            "./app/**/*.html",
-        ],
         "theme": {
             "extend": {},
         },
